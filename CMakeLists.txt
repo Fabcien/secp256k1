@@ -4,9 +4,9 @@ cmake_minimum_required(VERSION 3.5)
 project(secp256k1)
 
 # Add path for custom modules
-set(CMAKE_MODULE_PATH
-	${CMAKE_MODULE_PATH}
-	${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/modules
+list(APPEND CMAKE_MODULE_PATH
+	# For building as a standalone project
+	${CMAKE_SOURCE_DIR}/cmake/modules
 )
 
 include(AddCompilerFlags)
