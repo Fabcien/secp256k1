@@ -2,7 +2,7 @@
 
 export LC_ALL=C
 
-set -ev
+set -ex
 
 if [ -n "$HOST" ]; then
   USE_HOST="--host=$HOST"

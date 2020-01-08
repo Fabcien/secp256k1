@@ -2,7 +2,7 @@
 
 export LC_ALL=C
 
-set -ev
+set -ex
 
 if [ "x$HOST" = "xi686-linux-gnu" ]; then
   TOOLCHAIN_FILE="-DCMAKE_TOOLCHAIN_FILE=../cmake/platforms/Linux32.cmake"
