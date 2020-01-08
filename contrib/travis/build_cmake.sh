@@ -3,7 +3,7 @@
 set -ev
 
 if [ "x$HOST" = "xi686-linux-gnu" ]; then
-  export TOOLCHAIN_FILE="-DCMAKE_TOOLCHAIN_FILE=cmake/platforms/Linux32.cmake"
+  export TOOLCHAIN_FILE="-DCMAKE_TOOLCHAIN_FILE=../cmake/platforms/Linux32.cmake"
 fi
 
 if [ "x$BIGNUM" = "xno" ]; then
@@ -11,7 +11,11 @@ if [ "x$BIGNUM" = "xno" ]; then
 fi
 
 export $EXTRAFLAGS
-cmake -GNinja \
+
+mkdir -p build
+pushd build
+
+cmake -GNinja ..\
   -DSECP256K1_ECMULT_STATIC_PRECOMPUTATION=$STATICPRECOMPUTATION \
   -DSECP256K1_ENABLE_MODULE_ECDH=$ECDH \
   -DSECP256K1_ENABLE_MODULE_RECOVERY=$RECOVERY \
@@ -22,3 +26,5 @@ cmake -GNinja \
   $TOOLCHAIN_FILE \
 
 ninja check-secp256k1
+
+popd
