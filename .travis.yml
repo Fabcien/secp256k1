@@ -1,21 +1,34 @@
 language: c
 os: linux
+dist: xenial
 addons:
   apt:
+    sources:
+      - sourceline: 'deb https://apt.kitware.com/ubuntu/ xenial main'
+        key_url: 'https://apt.kitware.com/keys/kitware-archive-latest.asc'
     packages:
+      - cmake
       - libgmp-dev
       - ninja-build
-install:
- - wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | sudo apt-key add -
- - sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ xenial main'
- - sudo apt-get update
- - sudo apt-get install cmake
 compiler:
   - clang
   - gcc
 env:
   global:
-    - FIELD=auto  BIGNUM=auto  SCALAR=auto  ENDOMORPHISM=no  STATICPRECOMPUTATION=yes  ASM=no  BUILD=check  EXTRAFLAGS=  HOST=  ECDH=no  RECOVERY=no  SCHNORR=yes  EXPERIMENTAL=no  JNI=no
+    - FIELD=auto
+    - BIGNUM=auto
+    - SCALAR=auto
+    - ENDOMORPHISM=no
+    - STATICPRECOMPUTATION=yes
+    - ASM=no
+    - BUILD=check
+    - EXTRAFLAGS=
+    - HOST=
+    - ECDH=no
+    - RECOVERY=no
+    - SCHNORR=yes
+    - EXPERIMENTAL=no
+    - JNI=no
   jobs:
     - SCALAR=32bit    RECOVERY=yes
     - SCALAR=32bit    FIELD=32bit       ECDH=yes  EXPERIMENTAL=yes
