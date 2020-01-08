@@ -1,9 +1,15 @@
 language: c
+os: linux
 addons:
   apt:
     packages:
       - libgmp-dev
       - ninja-build
+install:
+ - wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | sudo apt-key add -
+ - sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ xenial main'
+ - sudo apt-get update
+ - sudo apt-get install cmake
 compiler:
   - clang
   - gcc
@@ -61,12 +67,6 @@ jobs:
             - gcc-multilib
             - libgmp-dev:i386
             - ninja-build:i386
-before_script:
- - wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | sudo apt-key add -
- - sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ xenial main'
- - sudo apt-get update
- - sudo apt-get -y install cmake
 script:
  - ./travis/build_autotools.sh
  - ./travis/build_cmake.sh
-os: linux
