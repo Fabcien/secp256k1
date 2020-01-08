@@ -12,6 +12,9 @@ fi
 
 ./autogen.sh
 
+mkdir buildautotools
+pushd buildautotools
+
 ./configure \
   --enable-experimental=$EXPERIMENTAL \
   --enable-endomorphism=$ENDOMORPHISM \
@@ -25,3 +28,5 @@ fi
   --enable-jni=$JNI $EXTRAFLAGS $USE_HOST
 
 make -j2 $BUILD
+
+popd
