@@ -25,7 +25,9 @@ pushd buildautotools
   --enable-module-ecdh=$ECDH \
   --enable-module-recovery=$RECOVERY \
   --enable-module-schnorr=$SCHNORR \
-  --enable-jni=$JNI $EXTRAFLAGS $USE_HOST
+  --enable-jni=$JNI \
+  $EXTRAFLAGS \
+  $USE_HOST
 
 make -j2 $BUILD
 
