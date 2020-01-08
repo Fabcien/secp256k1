@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 
+export LC_ALL=C
+
 set -ev
 
 if [ "x$HOST" = "xi686-linux-gnu" ]; then
-  export TOOLCHAIN_FILE="-DCMAKE_TOOLCHAIN_FILE=../cmake/platforms/Linux32.cmake"
+  TOOLCHAIN_FILE="-DCMAKE_TOOLCHAIN_FILE=../cmake/platforms/Linux32.cmake"
 fi
 
 if [ "x$BIGNUM" = "xno" ]; then
-  export USE_GMP="-DGMP_LIBRARY=OFF"
+  USE_GMP="-DGMP_LIBRARY=OFF"
 fi
-
-export $EXTRAFLAGS
 
 mkdir -p buildcmake
 pushd buildcmake

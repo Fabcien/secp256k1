@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 
+export LC_ALL=C
+
 set -ev
 
 if [ -n "$HOST" ]; then
-  export USE_HOST="--host=$HOST"
+  USE_HOST="--host=$HOST"
 fi
 
 if [ "x$HOST" = "xi686-linux-gnu" ]; then
-  export CC="$CC -m32"
+  CC="$CC -m32"
 fi
 
 ./autogen.sh

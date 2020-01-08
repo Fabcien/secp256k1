@@ -63,6 +63,6 @@ matrix:
             - libgmp-dev:i386
             - ninja-build:i386
 script:
- - ./contrib/travis/build_autotools.sh
- - ./contrib/travis/build_cmake.sh
+ - ./travis/build_autotools.sh
+ - ./travis/build_cmake.sh
 os: linux
