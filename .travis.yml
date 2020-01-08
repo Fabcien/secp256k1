@@ -39,18 +39,21 @@ matrix:
           packages:
             - gcc-multilib
             - libgmp-dev:i386
+            - ninja-build:i386
     - compiler: clang
       env: HOST=i686-linux-gnu
       addons:
         apt:
           packages:
             - gcc-multilib
+            - ninja-build:i386
     - compiler: gcc
       env: HOST=i686-linux-gnu ENDOMORPHISM=yes
       addons:
         apt:
           packages:
             - gcc-multilib
+            - ninja-build:i386
     - compiler: gcc
       env: HOST=i686-linux-gnu
       addons:
@@ -58,6 +61,7 @@ matrix:
           packages:
             - gcc-multilib
             - libgmp-dev:i386
+            - ninja-build:i386
 script:
  - ./contrib/travis/build_autotools.sh
  - ./contrib/travis/build_cmake.sh
