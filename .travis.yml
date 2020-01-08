@@ -1,5 +1,4 @@
 language: c
-sudo: false
 addons:
   apt:
     packages:
@@ -11,7 +10,7 @@ compiler:
 env:
   global:
     - FIELD=auto  BIGNUM=auto  SCALAR=auto  ENDOMORPHISM=no  STATICPRECOMPUTATION=yes  ASM=no  BUILD=check  EXTRAFLAGS= CMAKE_EXTRA= HOST=  ECDH=no  RECOVERY=no  SCHNORR=yes  EXPERIMENTAL=no  JNI=no
-  matrix:
+  jobs:
     - BUILD_TOOLS=autotools SCALAR=32bit    RECOVERY=yes
     - BUILD_TOOLS=autotools SCALAR=32bit    FIELD=32bit       ECDH=yes  EXPERIMENTAL=yes
     - BUILD_TOOLS=autotools SCALAR=64bit
@@ -39,7 +38,7 @@ env:
     - BUILD_TOOLS=cmake CMAKE_EXTRA=-DCMAKE_BUILD_TYPE=Debug
     - BUILD_TOOLS=cmake JNI=yes      ECDH=yes
     - BUILD_TOOLS=cmake SCHNORR=no
-matrix:
+jobs:
   fast_finish: true
   include:
     - compiler: clang
@@ -75,13 +74,6 @@ matrix:
           packages:
             - gcc-multilib
             - libgmp-dev:i386
-    - compiler: gcc
-      env: BUILD_TOOLS=cmake HOST=i686-linux-gnu
-      addons:
-        apt:
-          packages:
-            - gcc-multilib
-            - ninja-build:i386
     - compiler: gcc
       env: BUILD_TOOLS=cmake HOST=i686-linux-gnu
       addons:
