@@ -9,7 +9,7 @@ compiler:
   - gcc
 env:
   global:
-    - FIELD=auto  BIGNUM=auto  SCALAR=auto  ENDOMORPHISM=no  STATICPRECOMPUTATION=yes  ASM=no  BUILD=check  EXTRAFLAGS= HOST=  ECDH=no  RECOVERY=no  SCHNORR=yes  EXPERIMENTAL=no  JNI=no
+    - FIELD=auto  BIGNUM=auto  SCALAR=auto  ENDOMORPHISM=no  STATICPRECOMPUTATION=yes  ASM=no  BUILD=check  EXTRAFLAGS=  HOST=  ECDH=no  RECOVERY=no  SCHNORR=yes  EXPERIMENTAL=no  JNI=no
   jobs:
     - SCALAR=32bit    RECOVERY=yes
     - SCALAR=32bit    FIELD=32bit       ECDH=yes  EXPERIMENTAL=yes
@@ -61,6 +61,11 @@ jobs:
             - gcc-multilib
             - libgmp-dev:i386
             - ninja-build:i386
+before_script:
+ - wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | sudo apt-key add -
+ - sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ xenial main'
+ - sudo apt-get update
+ - sudo apt-get install cmake
 script:
  - ./travis/build_autotools.sh
  - ./travis/build_cmake.sh

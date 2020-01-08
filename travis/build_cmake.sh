@@ -15,6 +15,9 @@ fi
 mkdir -p buildcmake
 pushd buildcmake
 
+which cmake
+cmake --version
+
 cmake -GNinja .. \
   -DSECP256K1_ECMULT_STATIC_PRECOMPUTATION=$STATICPRECOMPUTATION \
   -DSECP256K1_ENABLE_MODULE_ECDH=$ECDH \
