@@ -68,7 +68,6 @@ matrix:
         apt:
           packages:
             - gcc-multilib
-            - ninja-build:i386
     - compiler: gcc
       env: BUILD_TOOLS=autotools HOST=i686-linux-gnu
       addons:
@@ -76,6 +75,12 @@ matrix:
           packages:
             - gcc-multilib
             - libgmp-dev:i386
+    - compiler: gcc
+      env: BUILD_TOOLS=cmake HOST=i686-linux-gnu
+      addons:
+        apt:
+          packages:
+            - gcc-multilib
             - ninja-build:i386
     - compiler: gcc
       env: BUILD_TOOLS=cmake HOST=i686-linux-gnu
