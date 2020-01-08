@@ -9,79 +9,59 @@ compiler:
   - gcc
 env:
   global:
-    - FIELD=auto  BIGNUM=auto  SCALAR=auto  ENDOMORPHISM=no  STATICPRECOMPUTATION=yes  ASM=no  BUILD=check  EXTRAFLAGS= CMAKE_EXTRA= HOST=  ECDH=no  RECOVERY=no  SCHNORR=yes  EXPERIMENTAL=no  JNI=no
+    - FIELD=auto  BIGNUM=auto  SCALAR=auto  ENDOMORPHISM=no  STATICPRECOMPUTATION=yes  ASM=no  BUILD=check  EXTRAFLAGS= HOST=  ECDH=no  RECOVERY=no  SCHNORR=yes  EXPERIMENTAL=no  JNI=no
   jobs:
-    - BUILD_TOOLS=autotools SCALAR=32bit    RECOVERY=yes
-    - BUILD_TOOLS=autotools SCALAR=32bit    FIELD=32bit       ECDH=yes  EXPERIMENTAL=yes
-    - BUILD_TOOLS=autotools SCALAR=64bit
-    - BUILD_TOOLS=autotools FIELD=64bit     RECOVERY=yes
-    - BUILD_TOOLS=autotools FIELD=64bit     ENDOMORPHISM=yes
-    - BUILD_TOOLS=autotools FIELD=64bit     ENDOMORPHISM=yes  ECDH=yes EXPERIMENTAL=yes
-    - BUILD_TOOLS=autotools FIELD=64bit                       ASM=x86_64
-    - BUILD_TOOLS=autotools FIELD=64bit     ENDOMORPHISM=yes  ASM=x86_64
-    - BUILD_TOOLS=autotools FIELD=32bit     ENDOMORPHISM=yes
-    - BUILD_TOOLS=autotools BIGNUM=no
-    - BUILD_TOOLS=autotools BIGNUM=no       ENDOMORPHISM=yes RECOVERY=yes EXPERIMENTAL=yes
-    - BUILD_TOOLS=autotools BIGNUM=no       STATICPRECOMPUTATION=no
-    - BUILD_TOOLS=autotools BUILD=distcheck
-    - BUILD_TOOLS=autotools EXTRAFLAGS=CPPFLAGS=-DDETERMINISTIC
-    - BUILD_TOOLS=autotools EXTRAFLAGS=CFLAGS=-O0
-    - BUILD_TOOLS=autotools BUILD=check-java JNI=yes ECDH=yes EXPERIMENTAL=yes
-    - BUILD_TOOLS=autotools SCHNORR=no
-    - BUILD_TOOLS=cmake RECOVERY=yes
-    - BUILD_TOOLS=cmake ECDH=yes
-    - BUILD_TOOLS=cmake ASM=yes
-    - BUILD_TOOLS=cmake BIGNUM=no
-    - BUILD_TOOLS=cmake BIGNUM=no    RECOVERY=yes
-    - BUILD_TOOLS=cmake BIGNUM=no    STATICPRECOMPUTATION=no
-    - BUILD_TOOLS=cmake CMAKE_EXTRA=-DCMAKE_C_FLAGS=-DDETERMINISTIC
-    - BUILD_TOOLS=cmake CMAKE_EXTRA=-DCMAKE_BUILD_TYPE=Debug
-    - BUILD_TOOLS=cmake JNI=yes      ECDH=yes
-    - BUILD_TOOLS=cmake SCHNORR=no
+    - SCALAR=32bit    RECOVERY=yes
+    - SCALAR=32bit    FIELD=32bit       ECDH=yes  EXPERIMENTAL=yes
+    - SCALAR=64bit
+    - FIELD=64bit     RECOVERY=yes
+    - FIELD=64bit     ENDOMORPHISM=yes
+    - FIELD=64bit     ENDOMORPHISM=yes  ECDH=yes EXPERIMENTAL=yes
+    - FIELD=64bit                       ASM=x86_64
+    - FIELD=64bit     ENDOMORPHISM=yes  ASM=x86_64
+    - FIELD=32bit     ENDOMORPHISM=yes
+    - BIGNUM=no
+    - BIGNUM=no       ENDOMORPHISM=yes RECOVERY=yes EXPERIMENTAL=yes
+    - BIGNUM=no       STATICPRECOMPUTATION=no
+    - BUILD=distcheck
+    - EXTRAFLAGS=CPPFLAGS=-DDETERMINISTIC
+    - EXTRAFLAGS=CFLAGS=-O0
+    - BUILD=check-java JNI=yes ECDH=yes EXPERIMENTAL=yes
+    - SCHNORR=no
 jobs:
   fast_finish: true
   include:
     - compiler: clang
-      env: BUILD_TOOLS=autotools HOST=i686-linux-gnu ENDOMORPHISM=yes
+      env: HOST=i686-linux-gnu ENDOMORPHISM=yes
       addons:
         apt:
           packages:
             - gcc-multilib
             - libgmp-dev:i386
+            - ninja-build:i386
     - compiler: clang
-      env: BUILD_TOOLS=autotools HOST=i686-linux-gnu
-      addons:
-        apt:
-          packages:
-            - gcc-multilib
-    - compiler: clang
-      env: BUILD_TOOLS=cmake HOST=i686-linux-gnu
+      env: HOST=i686-linux-gnu
       addons:
         apt:
           packages:
             - gcc-multilib
             - ninja-build:i386
     - compiler: gcc
-      env: BUILD_TOOLS=autotools HOST=i686-linux-gnu ENDOMORPHISM=yes
+      env: HOST=i686-linux-gnu ENDOMORPHISM=yes
       addons:
         apt:
           packages:
             - gcc-multilib
+            - ninja-build:i386
     - compiler: gcc
-      env: BUILD_TOOLS=autotools HOST=i686-linux-gnu
+      env: HOST=i686-linux-gnu
       addons:
         apt:
           packages:
             - gcc-multilib
             - libgmp-dev:i386
-    - compiler: gcc
-      env: BUILD_TOOLS=cmake HOST=i686-linux-gnu
-      addons:
-        apt:
-          packages:
-            - gcc-multilib
             - ninja-build:i386
 script:
- - if [ "x$BUILD_TOOLS" = "xautotools" ]; then ./travis/build_autotools.sh; fi
- - if [ "x$BUILD_TOOLS" = "xcmake" ]; then ./travis/build_cmake.sh; fi
+ - ./travis/build_autotools.sh
+ - ./travis/build_cmake.sh
 os: linux
