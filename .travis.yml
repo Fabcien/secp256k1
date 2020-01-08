@@ -2,7 +2,9 @@ language: c
 sudo: false
 addons:
   apt:
-    packages: libgmp-dev
+    packages:
+      - libgmp-dev
+      - ninja-build
 compiler:
   - clang
   - gcc
@@ -58,4 +60,5 @@ matrix:
             - libgmp-dev:i386
 script:
  - ./contrib/travis/build_autotools.sh
+ - ./contrib/travis/build_cmake.sh
 os: linux
