@@ -15,7 +15,7 @@ fi
 mkdir buildautotools
 pushd buildautotools
 
-./configure \
+../configure \
   --enable-experimental=$EXPERIMENTAL \
   --enable-endomorphism=$ENDOMORPHISM \
   --with-field=$FIELD \
