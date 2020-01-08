@@ -12,8 +12,8 @@ fi
 
 export $EXTRAFLAGS
 
-mkdir -p build
-pushd build
+mkdir -p buildcmake
+pushd buildcmake
 
 cmake -GNinja ..\
   -DSECP256K1_ECMULT_STATIC_PRECOMPUTATION=$STATICPRECOMPUTATION \
