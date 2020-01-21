@@ -45,8 +45,7 @@ jobs:
             - sourceline: 'deb https://apt.kitware.com/ubuntu/ xenial main'
               key_url: 'https://apt.kitware.com/keys/kitware-archive-latest.asc'
           packages:
-            - cmake-data:i386
-            - cmake:i386
+            - cmake
             - gcc-multilib
             - libgmp-dev:i386
             - ninja-build:i386
@@ -58,8 +57,7 @@ jobs:
             - sourceline: 'deb https://apt.kitware.com/ubuntu/ xenial main'
               key_url: 'https://apt.kitware.com/keys/kitware-archive-latest.asc'
           packages:
-            - cmake-data:i386
-            - cmake:i386
+            - cmake
             - gcc-multilib
             - ninja-build:i386
     - compiler: gcc
@@ -70,8 +68,7 @@ jobs:
             - sourceline: 'deb https://apt.kitware.com/ubuntu/ xenial main'
               key_url: 'https://apt.kitware.com/keys/kitware-archive-latest.asc'
           packages:
-            - cmake-data:i386
-            - cmake:i386
+            - cmake
             - gcc-multilib
             - ninja-build:i386
     - compiler: gcc
@@ -82,8 +79,7 @@ jobs:
             - sourceline: 'deb https://apt.kitware.com/ubuntu/ xenial main'
               key_url: 'https://apt.kitware.com/keys/kitware-archive-latest.asc'
           packages:
-            - cmake-data:i386
-            - cmake:i386
+            - cmake
             - gcc-multilib
             - libgmp-dev:i386
             - ninja-build:i386
