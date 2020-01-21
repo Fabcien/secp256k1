@@ -1,18 +1,15 @@
 # Copyright (c) 2017 The Bitcoin developers
 
 cmake_minimum_required(VERSION 3.5)
-project(secp256k1)
+project(secp256k1 LANGUAGES C)
 
-# Add path for custom modules
-set(CMAKE_MODULE_PATH
-	${CMAKE_MODULE_PATH}
-	${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/modules
-)
+# Add path for custom modules when building as a standalone project
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
 
 include(AddCompilerFlags)
 
 # libsecp256k1 use a different set of flags.
-add_compiler_flags(
+add_c_compiler_flags(
 	-pedantic
 	-Wall
 	-Wextra
@@ -20,9 +17,6 @@ add_compiler_flags(
 	-Wshadow
 	-Wno-unused-function
 	-Wno-overlength-strings
-)
-
-add_c_compiler_flags(
 	-std=c89
 	-Wnested-externs
 	-Wstrict-prototypes
@@ -103,30 +97,34 @@ endfunction(link_secp256k1_internal)
 add_custom_target(bench-secp256k1)
 
 function(add_secp256k1_bench NAME)
-	add_executable(${NAME} EXCLUDE_FROM_ALL ${ARGN})
-	link_secp256k1_internal(${NAME})
-	add_dependencies(bench-secp256k1 ${NAME})
+	set(EXECUTABLE_NAME "${NAME}-bench")
+	add_executable(${EXECUTABLE_NAME} EXCLUDE_FROM_ALL ${ARGN})
+	link_secp256k1_internal(${EXECUTABLE_NAME})
+
+	set(BENCH_NAME "bench-secp256k1-${NAME}")
+	add_custom_target(${BENCH_NAME} COMMAND ${EXECUTABLE_NAME} USES_TERMINAL)
+	add_dependencies(bench-secp256k1 ${BENCH_NAME})
 endfunction(add_secp256k1_bench)
 
 # ECDH module
 option(SECP256K1_ENABLE_MODULE_ECDH "Build libsecp256k1's ECDH module" OFF)
 if(SECP256K1_ENABLE_MODULE_ECDH)
 	set(ENABLE_MODULE_ECDH 1)
-	add_secp256k1_bench(bench_ecdh src/bench_ecdh.c)
+	add_secp256k1_bench(ecdh src/bench_ecdh.c)
 endif()
 
 # MultiSet module
 option(SECP256K1_ENABLE_MODULE_MULTISET "Build libsecp256k1's MULTISET module" ON)
 if(SECP256K1_ENABLE_MODULE_MULTISET)
     set(ENABLE_MODULE_MULTISET 1)
-	add_secp256k1_bench(bench_multiset src/bench_multiset.c)
+	add_secp256k1_bench(multiset src/bench_multiset.c)
 endif()
 
 # Recovery module
 option(SECP256K1_ENABLE_MODULE_RECOVERY "Build libsecp256k1's recovery module" ON)
 if(SECP256K1_ENABLE_MODULE_RECOVERY)
 	set(ENABLE_MODULE_RECOVERY 1)
-	add_secp256k1_bench(bench_recover src/bench_recover.c)
+	add_secp256k1_bench(recover src/bench_recover.c)
 endif()
 
 # Schnorr module
@@ -139,7 +137,12 @@ endif()
 option(SECP256K1_ECMULT_STATIC_PRECOMPUTATION "Precompute libsecp256k1's elliptic curve multiplication tables" ON)
 if(SECP256K1_ECMULT_STATIC_PRECOMPUTATION)
 	set(USE_ECMULT_STATIC_PRECOMPUTATION 1)
+	set(SECP256K1_ECMULT_WINDOW_SIZE 15 CACHE STRING "Window size for ecmult precomputation for verification, specified as integer in range [2..24].")
+	if(${SECP256K1_ECMULT_WINDOW_SIZE} LESS 2 OR ${SECP256K1_ECMULT_WINDOW_SIZE} GREATER 24)
+		message(FATAL_ERROR "SECP256K1_ECMULT_WINDOW_SIZE must be an integer in range [2..24]")
+	endif()
 
+	# FIXME: Propagate SECP256K1_ECMULT_WINDOW_SIZE
 	include(NativeExecutable)
 	add_native_executable(gen_context src/gen_context.c)
 
@@ -233,6 +236,7 @@ if(SECP256K1_BUILD_TEST)
 endif(SECP256K1_BUILD_TEST)
 
 # Benchmarks
-add_secp256k1_bench(bench_verify src/bench_verify.c)
-add_secp256k1_bench(bench_sign src/bench_sign.c)
-add_secp256k1_bench(bench_internal src/bench_internal.c)
+add_secp256k1_bench(verify src/bench_verify.c)
+add_secp256k1_bench(sign src/bench_sign.c)
+add_secp256k1_bench(internal src/bench_internal.c)
+add_secp256k1_bench(ecmult src/bench_ecmult.c)
