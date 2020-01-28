@@ -12,7 +12,7 @@ if [ "x$BIGNUM" = "xno" ]; then
   USE_GMP="-DGMP_LIBRARY=OFF"
 fi
 
-mkdir -p buildcmake
+mkdir -p buildcmake/install
 pushd buildcmake
 
 # Use the cmake version installed via APT instead of the Travis custom one.
@@ -20,6 +20,7 @@ CMAKE_COMMAND=/usr/bin/cmake
 ${CMAKE_COMMAND} --version
 
 ${CMAKE_COMMAND} -GNinja .. \
+  -DCMAKE_INSTALL_PREFIX=install \
   -DSECP256K1_ECMULT_STATIC_PRECOMPUTATION=$STATICPRECOMPUTATION \
   -DSECP256K1_ENABLE_MODULE_ECDH=$ECDH \
   -DSECP256K1_ENABLE_MODULE_RECOVERY=$RECOVERY \
@@ -32,6 +33,6 @@ ${CMAKE_COMMAND} -GNinja .. \
   $USE_GMP \
   $TOOLCHAIN_FILE \
 
-ninja check-secp256k1
+ninja $CMAKE_TARGET
 
 popd

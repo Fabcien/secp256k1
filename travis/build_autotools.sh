@@ -31,6 +31,6 @@ pushd buildautotools
   $EXTRAFLAGS \
   $USE_HOST
 
-make -j2 $BUILD
+make -j2 $AUTOTOOLS_TARGET
 
 popd
