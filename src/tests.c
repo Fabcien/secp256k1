@@ -16,6 +16,7 @@
 
 #include "secp256k1.c"
 #include "include/secp256k1.h"
+#include "include/secp256k1_preallocated.h"
 #include "testrand_impl.h"
 
 #ifdef ENABLE_OPENSSL_TESTS
@@ -137,22 +138,46 @@ void random_scalar_order(secp256k1_scalar *num) {
     } while(1);
 }
 
-void run_context_tests(void) {
+void run_context_tests(int use_prealloc) {
     secp256k1_pubkey pubkey;
     secp256k1_pubkey zero_pubkey;
     secp256k1_ecdsa_signature sig;
     unsigned char ctmp[32];
     int32_t ecount;
     int32_t ecount2;
-    secp256k1_context *none = secp256k1_context_create(SECP256K1_CONTEXT_NONE);
-    secp256k1_context *sign = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
-    secp256k1_context *vrfy = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY);
-    secp256k1_context *both = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
+    secp256k1_context *none;
+    secp256k1_context *sign;
+    secp256k1_context *vrfy;
+    secp256k1_context *both;
+    void *none_prealloc = NULL;
+    void *sign_prealloc = NULL;
+    void *vrfy_prealloc = NULL;
+    void *both_prealloc = NULL;
 
     secp256k1_gej pubj;
     secp256k1_ge pub;
     secp256k1_scalar msg, key, nonce;
     secp256k1_scalar sigr, sigs;
+
+    if (use_prealloc) {
+        none_prealloc = malloc(secp256k1_context_preallocated_size(SECP256K1_CONTEXT_NONE));
+        sign_prealloc = malloc(secp256k1_context_preallocated_size(SECP256K1_CONTEXT_SIGN));
+        vrfy_prealloc = malloc(secp256k1_context_preallocated_size(SECP256K1_CONTEXT_VERIFY));
+        both_prealloc = malloc(secp256k1_context_preallocated_size(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY));
+        CHECK(none_prealloc != NULL);
+        CHECK(sign_prealloc != NULL);
+        CHECK(vrfy_prealloc != NULL);
+        CHECK(both_prealloc != NULL);
+        none = secp256k1_context_preallocated_create(none_prealloc, SECP256K1_CONTEXT_NONE);
+        sign = secp256k1_context_preallocated_create(sign_prealloc, SECP256K1_CONTEXT_SIGN);
+        vrfy = secp256k1_context_preallocated_create(vrfy_prealloc, SECP256K1_CONTEXT_VERIFY);
+        both = secp256k1_context_preallocated_create(both_prealloc, SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
+    } else {
+        none = secp256k1_context_create(SECP256K1_CONTEXT_NONE);
+        sign = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
+        vrfy = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY);
+        both = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
+    }
 
     memset(&zero_pubkey, 0, sizeof(zero_pubkey));
 
@@ -163,14 +188,57 @@ void run_context_tests(void) {
     secp256k1_context_set_error_callback(sign, counting_illegal_callback_fn, NULL);
     CHECK(vrfy->error_callback.fn != sign->error_callback.fn);
 
+    /* check if sizes for cloning are consistent */
+    CHECK(secp256k1_context_preallocated_clone_size(none) == secp256k1_context_preallocated_size(SECP256K1_CONTEXT_NONE));
+    CHECK(secp256k1_context_preallocated_clone_size(sign) == secp256k1_context_preallocated_size(SECP256K1_CONTEXT_SIGN));
+    CHECK(secp256k1_context_preallocated_clone_size(vrfy) == secp256k1_context_preallocated_size(SECP256K1_CONTEXT_VERIFY));
+    CHECK(secp256k1_context_preallocated_clone_size(both) == secp256k1_context_preallocated_size(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY));
+
     /*** clone and destroy all of them to make sure cloning was complete ***/
     {
         secp256k1_context *ctx_tmp;
 
-        ctx_tmp = none; none = secp256k1_context_clone(none); secp256k1_context_destroy(ctx_tmp);
-        ctx_tmp = sign; sign = secp256k1_context_clone(sign); secp256k1_context_destroy(ctx_tmp);
-        ctx_tmp = vrfy; vrfy = secp256k1_context_clone(vrfy); secp256k1_context_destroy(ctx_tmp);
-        ctx_tmp = both; both = secp256k1_context_clone(both); secp256k1_context_destroy(ctx_tmp);
+        if (use_prealloc) {
+            /* clone into a non-preallocated context and then again into a new preallocated one. */
+            ctx_tmp = none; none = secp256k1_context_clone(none); secp256k1_context_preallocated_destroy(ctx_tmp);
+            free(none_prealloc); none_prealloc = malloc(secp256k1_context_preallocated_size(SECP256K1_CONTEXT_NONE)); CHECK(none_prealloc != NULL);
+            ctx_tmp = none; none = secp256k1_context_preallocated_clone(none, none_prealloc); secp256k1_context_destroy(ctx_tmp);
+
+            ctx_tmp = sign; sign = secp256k1_context_clone(sign); secp256k1_context_preallocated_destroy(ctx_tmp);
+            free(sign_prealloc); sign_prealloc = malloc(secp256k1_context_preallocated_size(SECP256K1_CONTEXT_SIGN)); CHECK(sign_prealloc != NULL);
+            ctx_tmp = sign; sign = secp256k1_context_preallocated_clone(sign, sign_prealloc); secp256k1_context_destroy(ctx_tmp);
+
+            ctx_tmp = vrfy; vrfy = secp256k1_context_clone(vrfy); secp256k1_context_preallocated_destroy(ctx_tmp);
+            free(vrfy_prealloc); vrfy_prealloc = malloc(secp256k1_context_preallocated_size(SECP256K1_CONTEXT_VERIFY)); CHECK(vrfy_prealloc != NULL);
+            ctx_tmp = vrfy; vrfy = secp256k1_context_preallocated_clone(vrfy, vrfy_prealloc); secp256k1_context_destroy(ctx_tmp);
+
+            ctx_tmp = both; both = secp256k1_context_clone(both); secp256k1_context_preallocated_destroy(ctx_tmp);
+            free(both_prealloc); both_prealloc = malloc(secp256k1_context_preallocated_size(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY)); CHECK(both_prealloc != NULL);
+            ctx_tmp = both; both = secp256k1_context_preallocated_clone(both, both_prealloc); secp256k1_context_destroy(ctx_tmp);
+        } else {
+            /* clone into a preallocated context and then again into a new non-preallocated one. */
+            void *prealloc_tmp;
+
+            prealloc_tmp = malloc(secp256k1_context_preallocated_size(SECP256K1_CONTEXT_NONE)); CHECK(prealloc_tmp != NULL);
+            ctx_tmp = none; none = secp256k1_context_preallocated_clone(none, prealloc_tmp); secp256k1_context_destroy(ctx_tmp);
+            ctx_tmp = none; none = secp256k1_context_clone(none); secp256k1_context_preallocated_destroy(ctx_tmp);
+            free(prealloc_tmp);
+
+            prealloc_tmp = malloc(secp256k1_context_preallocated_size(SECP256K1_CONTEXT_SIGN)); CHECK(prealloc_tmp != NULL);
+            ctx_tmp = sign; sign = secp256k1_context_preallocated_clone(sign, prealloc_tmp); secp256k1_context_destroy(ctx_tmp);
+            ctx_tmp = sign; sign = secp256k1_context_clone(sign); secp256k1_context_preallocated_destroy(ctx_tmp);
+            free(prealloc_tmp);
+
+            prealloc_tmp = malloc(secp256k1_context_preallocated_size(SECP256K1_CONTEXT_VERIFY)); CHECK(prealloc_tmp != NULL);
+            ctx_tmp = vrfy; vrfy = secp256k1_context_preallocated_clone(vrfy, prealloc_tmp); secp256k1_context_destroy(ctx_tmp);
+            ctx_tmp = vrfy; vrfy = secp256k1_context_clone(vrfy); secp256k1_context_preallocated_destroy(ctx_tmp);
+            free(prealloc_tmp);
+
+            prealloc_tmp = malloc(secp256k1_context_preallocated_size(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY)); CHECK(prealloc_tmp != NULL);
+            ctx_tmp = both; both = secp256k1_context_preallocated_clone(both, prealloc_tmp); secp256k1_context_destroy(ctx_tmp);
+            ctx_tmp = both; both = secp256k1_context_clone(both); secp256k1_context_preallocated_destroy(ctx_tmp);
+            free(prealloc_tmp);
+        }
     }
 
     /* Verify that the error callback makes it across the clone. */
@@ -229,10 +297,6 @@ void run_context_tests(void) {
     secp256k1_context_set_illegal_callback(vrfy, NULL, NULL);
     secp256k1_context_set_illegal_callback(sign, NULL, NULL);
 
-    /* This shouldn't leak memory, due to already-set tests. */
-    secp256k1_ecmult_gen_context_build(&sign->ecmult_gen_ctx, NULL);
-    secp256k1_ecmult_context_build(&vrfy->ecmult_ctx, NULL);
-
     /* obtain a working nonce */
     do {
         random_scalar_order_test(&nonce);
@@ -247,12 +311,25 @@ void run_context_tests(void) {
     CHECK(secp256k1_ecdsa_sig_verify(&both->ecmult_ctx, &sigr, &sigs, &pub, &msg));
 
     /* cleanup */
-    secp256k1_context_destroy(none);
-    secp256k1_context_destroy(sign);
-    secp256k1_context_destroy(vrfy);
-    secp256k1_context_destroy(both);
+    if (use_prealloc) {
+        secp256k1_context_preallocated_destroy(none);
+        secp256k1_context_preallocated_destroy(sign);
+        secp256k1_context_preallocated_destroy(vrfy);
+        secp256k1_context_preallocated_destroy(both);
+        free(none_prealloc);
+        free(sign_prealloc);
+        free(vrfy_prealloc);
+        free(both_prealloc);
+    } else {
+        secp256k1_context_destroy(none);
+        secp256k1_context_destroy(sign);
+        secp256k1_context_destroy(vrfy);
+        secp256k1_context_destroy(both);
+    }
     /* Defined as no-op. */
     secp256k1_context_destroy(NULL);
+    secp256k1_context_preallocated_destroy(NULL);
+
 }
 
 void run_scratch_tests(void) {
@@ -2572,7 +2649,6 @@ void test_ecmult_multi(secp256k1_scratch *scratch, secp256k1_ecmult_multi_func e
     secp256k1_gej r;
     secp256k1_gej r2;
     ecmult_multi_data data;
-    secp256k1_scratch *scratch_empty;
 
     data.sc = sc;
     data.pt = pt;
@@ -2606,11 +2682,6 @@ void test_ecmult_multi(secp256k1_scratch *scratch, secp256k1_ecmult_multi_func e
         secp256k1_gej_neg(&r2, &r2);
         secp256k1_gej_add_var(&r, &r, &r2, NULL);
         CHECK(secp256k1_gej_is_infinity(&r));
-
-        /* Try to multiply 1 point, but scratch space is empty */
-        scratch_empty = secp256k1_scratch_create(&ctx->error_callback, 0);
-        CHECK(!ecmult_multi(&ctx->ecmult_ctx, scratch_empty, &r, &szero, ecmult_multi_callback, &data, 1));
-        secp256k1_scratch_destroy(scratch_empty);
 
         /* Try to multiply 1 point, but callback returns false */
         CHECK(!ecmult_multi(&ctx->ecmult_ctx, scratch, &r, &szero, ecmult_multi_false_callback, &data, 1));
@@ -2808,6 +2879,24 @@ void test_ecmult_multi(secp256k1_scratch *scratch, secp256k1_ecmult_multi_func e
     }
 }
 
+void test_ecmult_multi_batch_single(secp256k1_ecmult_multi_func ecmult_multi) {
+    secp256k1_scalar szero;
+    secp256k1_scalar sc[32];
+    secp256k1_ge pt[32];
+    secp256k1_gej r;
+    ecmult_multi_data data;
+    secp256k1_scratch *scratch_empty;
+
+    data.sc = sc;
+    data.pt = pt;
+    secp256k1_scalar_set_int(&szero, 0);
+
+    /* Try to multiply 1 point, but scratch space is empty.*/
+    scratch_empty = secp256k1_scratch_create(&ctx->error_callback, 0);
+    CHECK(!ecmult_multi(&ctx->ecmult_ctx, scratch_empty, &r, &szero, ecmult_multi_callback, &data, 1));
+    secp256k1_scratch_destroy(scratch_empty);
+}
+
 void test_secp256k1_pippenger_bucket_window_inv(void) {
     int i;
 
@@ -2931,19 +3020,25 @@ void test_ecmult_multi_batching(void) {
     }
     data.sc = sc;
     data.pt = pt;
+    secp256k1_gej_neg(&r2, &r2);
 
-    /* Test with empty scratch space */
+    /* Test with empty scratch space. It should compute the correct result using 
+     * ecmult_mult_simple algorithm which doesn't require a scratch space. */
     scratch = secp256k1_scratch_create(&ctx->error_callback, 0);
-    CHECK(!secp256k1_ecmult_multi_var(&ctx->ecmult_ctx, scratch, &r, &scG, ecmult_multi_callback, &data, 1));
+    CHECK(secp256k1_ecmult_multi_var(&ctx->ecmult_ctx, scratch, &r, &scG, ecmult_multi_callback, &data, n_points));
+    secp256k1_gej_add_var(&r, &r, &r2, NULL);
+    CHECK(secp256k1_gej_is_infinity(&r));
     secp256k1_scratch_destroy(scratch);
 
     /* Test with space for 1 point in pippenger. That's not enough because
-     * ecmult_multi selects strauss which requires more memory. */
+     * ecmult_multi selects strauss which requires more memory. It should
+     * therefore select the simple algorithm. */
     scratch = secp256k1_scratch_create(&ctx->error_callback, secp256k1_pippenger_scratch_size(1, 1) + PIPPENGER_SCRATCH_OBJECTS*ALIGNMENT);
-    CHECK(!secp256k1_ecmult_multi_var(&ctx->ecmult_ctx, scratch, &r, &scG, ecmult_multi_callback, &data, 1));
+    CHECK(secp256k1_ecmult_multi_var(&ctx->ecmult_ctx, scratch, &r, &scG, ecmult_multi_callback, &data, n_points));
+    secp256k1_gej_add_var(&r, &r, &r2, NULL);
+    CHECK(secp256k1_gej_is_infinity(&r));
     secp256k1_scratch_destroy(scratch);
 
-    secp256k1_gej_neg(&r2, &r2);
     for(i = 1; i <= n_points; i++) {
         if (i > ECMULT_PIPPENGER_THRESHOLD) {
             int bucket_window = secp256k1_pippenger_bucket_window(i);
@@ -2971,7 +3066,9 @@ void run_ecmult_multi_tests(void) {
     test_ecmult_multi(scratch, secp256k1_ecmult_multi_var);
     test_ecmult_multi(NULL, secp256k1_ecmult_multi_var);
     test_ecmult_multi(scratch, secp256k1_ecmult_pippenger_batch_single);
+    test_ecmult_multi_batch_single(secp256k1_ecmult_pippenger_batch_single);
     test_ecmult_multi(scratch, secp256k1_ecmult_strauss_batch_single);
+    test_ecmult_multi_batch_single(secp256k1_ecmult_strauss_batch_single);
     secp256k1_scratch_destroy(scratch);
 
     /* Run test_ecmult_multi with space for exactly one point */
@@ -5069,7 +5166,8 @@ int main(int argc, char **argv) {
     printf("random seed = %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n", seed16[0], seed16[1], seed16[2], seed16[3], seed16[4], seed16[5], seed16[6], seed16[7], seed16[8], seed16[9], seed16[10], seed16[11], seed16[12], seed16[13], seed16[14], seed16[15]);
 
     /* initialize */
-    run_context_tests();
+    run_context_tests(0);
+    run_context_tests(1);
     run_scratch_tests();
     ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
     if (secp256k1_rand_bits(1)) {
