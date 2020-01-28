@@ -5,7 +5,7 @@ export LC_ALL=C
 set -ex
 
 if [ "x$HOST" = "xi686-linux-gnu" ]; then
-  TOOLCHAIN_FILE="-DCMAKE_TOOLCHAIN_FILE=../cmake/platforms/Linux32.cmake"
+  CMAKE_EXTRA_FLAGS="-DCMAKE_C_FLAGS=-m32"
 fi
 
 mkdir -p buildcmake
@@ -23,8 +23,8 @@ ${CMAKE_COMMAND} -GNinja .. \
   -DSECP256K1_ENABLE_JNI=$JNI \
   -DSECP256K1_ENABLE_BIGNUM=$BIGNUM \
   -DUSE_ASM_X86_64=$ASM \
-  $USE_GMP \
   $TOOLCHAIN_FILE \
+  $CMAKE_EXTRA_FLAGS
 
 ninja check-secp256k1
 
