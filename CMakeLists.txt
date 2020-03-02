@@ -67,14 +67,19 @@ else()
 endif()
 
 # We check if amd64 asm is supported.
-check_c_source_compiles("
-	#include <stdint.h>
-	int main() {
-		uint64_t a = 11, tmp;
-		__asm__ __volatile__(\"movq \$0x100000000,%1; mulq %%rsi\" : \"+a\"(a) : \"S\"(tmp) : \"cc\", \"%rdx\");
-		return 0;
-	}
-" USE_ASM_X86_64)
+option(SECP256K1_USE_ASM "Use assembly if available" ON)
+if($SECP256K1_USE_ASM)
+	check_c_source_compiles("
+		#include <stdint.h>
+		int main() {
+			uint64_t a = 11, tmp;
+			__asm__ __volatile__(\"movq \$0x100000000,%1; mulq %%rsi\" : \"+a\"(a) : \"S\"(tmp) : \"cc\", \"%rdx\");
+			return 0;
+		}
+	" USE_ASM_X86_64)
+else()
+	set(USE_ASM_X86_64 0)
+endif()
 
 # We make sure __int128 is defined
 include(CheckTypeSize)
@@ -148,11 +153,15 @@ add_custom_target(bench-secp256k1)
 
 function(add_secp256k1_bench NAME)
 	set(EXECUTABLE_NAME "${NAME}-bench")
-	add_executable(${EXECUTABLE_NAME} EXCLUDE_FROM_ALL ${ARGN})
+	add_executable(${EXECUTABLE_NAME} ${ARGN})
 	link_secp256k1_internal(${EXECUTABLE_NAME})
 
 	set(BENCH_NAME "bench-secp256k1-${NAME}")
-	add_custom_target(${BENCH_NAME} COMMAND ${EXECUTABLE_NAME} USES_TERMINAL)
+	add_custom_target(${BENCH_NAME}
+		COMMENT "Benchmarking libsecp256k1 ${NAME}"
+		COMMAND ${EXECUTABLE_NAME}
+		USES_TERMINAL
+	)
 	add_dependencies(bench-secp256k1 ${BENCH_NAME})
 endfunction(add_secp256k1_bench)
 
@@ -185,6 +194,12 @@ option(SECP256K1_ENABLE_MODULE_SCHNORR "Build libsecp256k1's Schnorr module" ON)
 if(SECP256K1_ENABLE_MODULE_SCHNORR)
 	set(ENABLE_MODULE_SCHNORR 1)
 	list(APPEND SECP256K1_PUBLIC_HEADERS include/secp256k1_schnorr.h)
+endif()
+
+# External default callbacks
+option(SECP256K1_ENABLE_EXTERNAL_DEFAULT_CALLBACKS "Enable external default callbacks" OFF)
+if(SECP256K1_ENABLE_EXTERNAL_DEFAULT_CALLBACKS)
+	set(USE_EXTERNAL_DEFAULT_CALLBACKS 1)
 endif()
 
 # Endomorphism

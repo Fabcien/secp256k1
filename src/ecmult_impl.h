@@ -138,7 +138,7 @@ static void secp256k1_ecmult_odd_multiples_table(int n, secp256k1_gej *prej, sec
  *    It only operates on tables sized for WINDOW_A wnaf multiples.
  *  - secp256k1_ecmult_odd_multiples_table_storage_var, which converts its
  *    resulting point set to actually affine points, and stores those in pre.
- *    It operates on tables of any size, but uses heap-allocated temporaries.
+ *    It operates on tables of any size.
  *
  *  To compute a*P + b*G, we compute a table for P using the first function,
  *  and for G using the second (which requires an inverse, but it only needs to
@@ -395,7 +395,7 @@ static void secp256k1_ecmult_context_clear(secp256k1_ecmult_context *ctx) {
  *    than the number of bits in the (absolute value) of the input.
  */
 static int secp256k1_ecmult_wnaf(int *wnaf, int len, const secp256k1_scalar *a, int w) {
-    secp256k1_scalar s = *a;
+    secp256k1_scalar s;
     int last_set_bit = -1;
     int bit = 0;
     int sign = 1;
@@ -408,6 +408,7 @@ static int secp256k1_ecmult_wnaf(int *wnaf, int len, const secp256k1_scalar *a, 
 
     memset(wnaf, 0, len * sizeof(wnaf[0]));
 
+    s = *a;
     if (secp256k1_scalar_get_bits(&s, 255, 1)) {
         secp256k1_scalar_negate(&s, &s);
         sign = -1;
