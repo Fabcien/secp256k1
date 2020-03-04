@@ -106,6 +106,7 @@ static int multiset_add_remove(const secp256k1_context* ctx, secp256k1_multiset 
     gej_from_multiset_var(&source, multiset);
     ge_from_data_var(&newelm, input, inputLen, remove);
 
+    secp256k1_gej_set_infinity(&target);
     secp256k1_gej_add_ge_var(&target, &source, &newelm, NULL);
 
     secp256k1_fe_normalize(&target.x);
@@ -137,6 +138,7 @@ int secp256k1_multiset_combine(const secp256k1_context* ctx, secp256k1_multiset 
     gej_from_multiset_var(&gej_multiset, multiset);
     gej_from_multiset_var(&gej_input, input);
 
+    secp256k1_gej_set_infinity(&gej_result);
     secp256k1_gej_add_var(&gej_result, &gej_multiset, &gej_input, NULL);
 
     secp256k1_fe_normalize(&gej_result.x);
