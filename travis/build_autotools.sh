@@ -27,11 +27,19 @@ pushd buildautotools
   --enable-ecmult-static-precomputation=$STATICPRECOMPUTATION \
   --with-ecmult-gen-precision=$ECMULTGENPRECISION \
   --enable-module-ecdh=$ECDH \
+  --enable-module-multiset=$MULTISET \
   --enable-module-recovery=$RECOVERY \
   --enable-module-schnorr=$SCHNORR \
   --enable-jni=$JNI \
+  --enable-openssl-tests=$OPENSSL_TESTS \
   $AUTOTOOLS_EXTRA_FLAGS \
   $USE_HOST
+
+print_logs() {
+  cat tests.log || :
+  cat exhaustive_tests.log || :
+}
+trap 'print_logs' ERR
 
 make -j2 $AUTOTOOLS_TARGET
 

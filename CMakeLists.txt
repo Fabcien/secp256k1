@@ -55,8 +55,7 @@ option(SECP256K1_ENABLE_BIGNUM "Use the GMP bignum implementation" OFF)
 if(SECP256K1_ENABLE_BIGNUM)
 	# We need to link in GMP
 	find_package(GMP REQUIRED)
-	target_include_directories(secp256k1 PUBLIC ${GMP_INCLUDE_DIR})
-	target_link_libraries(secp256k1 ${GMP_LIBRARY})
+	target_link_libraries(secp256k1 GMP::gmp)
 	set(USE_NUM_GMP 1)
 	set(USE_FIELD_INV_NUM 1)
 	set(USE_SCALAR_INV_NUM 1)
@@ -141,11 +140,30 @@ else()
 	set(USE_SCALAR_8X32 1)
 endif()
 
+option(SECP256K1_BUILD_TEST "Build secp256k1's unit tests" ON)
+include(CMakeDependentOption)
+cmake_dependent_option(
+	SECP256K1_BUILD_OPENSSL_TESTS "Build the OpenSSL tests" ON
+	SECP256K1_BUILD_TEST ON
+)
+if(SECP256K1_BUILD_OPENSSL_TESTS)
+	find_package(OpenSSL COMPONENTS Crypto)
+	if(NOT OpenSSL_FOUND)
+		message(FATAL_ERROR
+			"OpenSSL is not found, but is required for some tests. You can disable them by passing -DSECP256K1_BUILD_OPENSSL_TESTS=OFF."
+		)
+	endif()
+	set(ENABLE_OPENSSL_TESTS 1)
+endif()
+
 # Executable internal to secp256k1 need to have the HAVE_CONFIG_H define set.
 # For convenience, we wrap this into a function.
 function(link_secp256k1_internal NAME)
 	target_link_libraries(${NAME} secp256k1)
 	target_compile_definitions(${NAME} PRIVATE HAVE_CONFIG_H SECP256K1_BUILD)
+	if(SECP256K1_BUILD_OPENSSL_TESTS)
+		target_link_libraries(${NAME} OpenSSL::Crypto)
+	endif()
 endfunction(link_secp256k1_internal)
 
 # Phony target to build benchmarks
@@ -174,7 +192,7 @@ if(SECP256K1_ENABLE_MODULE_ECDH)
 endif()
 
 # MultiSet module
-option(SECP256K1_ENABLE_MODULE_MULTISET "Build libsecp256k1's MULTISET module" ON)
+option(SECP256K1_ENABLE_MODULE_MULTISET "Build libsecp256k1's MULTISET module" OFF)
 if(SECP256K1_ENABLE_MODULE_MULTISET)
     set(ENABLE_MODULE_MULTISET 1)
 	add_secp256k1_bench(multiset src/bench_multiset.c)
@@ -284,7 +302,6 @@ if(SECP256K1_ENABLE_JNI)
 endif()
 
 # Tests
-option(SECP256K1_BUILD_TEST "Build secp256k1's unit tests" ON)
 if(SECP256K1_BUILD_TEST)
 	include(TestSuite)
 	create_test_suite(secp256k1)

@@ -5,7 +5,7 @@ export LC_ALL=C
 set -ex
 
 if [ "x$HOST" = "xi686-linux-gnu" ]; then
-  CMAKE_EXTRA_FLAGS="-DCMAKE_C_FLAGS=-m32"
+  CMAKE_EXTRA_FLAGS="$CMAKE_EXTRA_FLAGS -DCMAKE_C_FLAGS=-m32"
 fi
 
 # "auto" is not a valid value for SECP256K1_ECMULT_GEN_PRECISION with cmake.
@@ -18,14 +18,16 @@ fi
 mkdir -p buildcmake/install
 pushd buildcmake
 
-# Use the cmake version installed via APT instead of the Travis custom one.
-CMAKE_COMMAND=/usr/bin/cmake
+# Use the cmake version installed via the install_cmake.sh script.
+CMAKE_COMMAND=/opt/cmake/bin/cmake
 ${CMAKE_COMMAND} --version
 
 ${CMAKE_COMMAND} -GNinja .. \
   -DCMAKE_INSTALL_PREFIX=install \
+  -DSECP256K1_BUILD_OPENSSL_TESTS=$OPENSSL_TESTS \
   -DSECP256K1_ECMULT_STATIC_PRECOMPUTATION=$STATICPRECOMPUTATION \
   -DSECP256K1_ENABLE_MODULE_ECDH=$ECDH \
+  -DSECP256K1_ENABLE_MODULE_MULTISET=$MULTISET \
   -DSECP256K1_ENABLE_MODULE_RECOVERY=$RECOVERY \
   -DSECP256K1_ENABLE_MODULE_SCHNORR=$SCHNORR \
   -DSECP256K1_ENABLE_JNI=$JNI \
