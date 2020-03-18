@@ -9,6 +9,7 @@ addons:
 install:
   - ./travis/install_cmake.sh
 cache:
+  ccache: true
   directories:
     - /opt/cmake
 compiler:
