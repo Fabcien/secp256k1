@@ -90,6 +90,10 @@ jobs:
     - compiler: gcc
       os: linux
       env: HOST=i686-linux-gnu OPENSSL_TESTS=no
+    # S390x build (big endian system)
+    - compiler: gcc
+      env: HOST=s390x-unknown-linux-gnu OPENSSL_TESTS=no ECDH=yes RECOVERY=yes EXPERIMENTAL=yes MULTISET=yes CTIMETEST=
+      arch: s390x
 
 # We use this to install macOS dependencies instead of the built in `homebrew`
 # plugin, because in xcode earlier than 11 they have a bug requiring updating
