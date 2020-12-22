@@ -4,12 +4,21 @@ export LC_ALL=C
 
 set -ex
 
+read -r -a CMAKE_EXTRA_FLAGS <<< "$CMAKE_EXTRA_FLAGS"
+
 if [ "x$HOST" = "xi686-linux-gnu" ]; then
-  CMAKE_EXTRA_FLAGS="$CMAKE_EXTRA_FLAGS -DCMAKE_C_FLAGS=-m32"
+  CMAKE_EXTRA_FLAGS+="-DCMAKE_C_FLAGS=-m32"
 fi
-if [ "$TRAVIS_OS_NAME" = "osx" ] && [ "$TRAVIS_COMPILER" = "gcc" ]
-then
-  CMAKE_EXTRA_FLAGS="$CMAKE_EXTRA_FLAGS -DCMAKE_C_COMPILER=gcc-9"
+
+if [ "$RUN_VALGRIND" = "yes" ]; then
+  CMAKE_C_FLAGS="-DVALGRIND"
+  if [ "${CIRRUS_OS}" = "darwin" ]; then
+    # The valgrind/memcheck.h header is not in a standard cmake location when
+    # installed from the LouisBrunner brew repo, so we need to add it.
+    #CMAKE_C_FLAGS="-isystem $(brew --prefix valgrind)/include ${CMAKE_C_FLAGS}"
+    CMAKE_C_FLAGS="-isystem /usr/local/include ${CMAKE_C_FLAGS}"
+  fi
+  CMAKE_EXTRA_FLAGS+="-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}"
 fi
 
 # "auto" is not a valid value for SECP256K1_ECMULT_GEN_PRECISION with cmake.
@@ -23,15 +32,6 @@ mkdir -p buildcmake/install
 pushd buildcmake
 
 CMAKE_COMMAND=cmake
-# Override with the cmake version installed via the install_cmake.sh script on
-# amd64
-if [ "${TRAVIS_CPU_ARCH}" = "amd64" ]; then
-  if [ "$TRAVIS_OS_NAME" = "linux" ]; then
-    CMAKE_COMMAND=/opt/cmake/bin/cmake
-  elif [ "$TRAVIS_OS_NAME" = "osx" ]; then
-    CMAKE_COMMAND=/opt/cmake/CMake.app/Contents/bin/cmake
-  fi
-fi
 ${CMAKE_COMMAND} --version
 
 ${CMAKE_COMMAND} -GNinja .. \
@@ -49,7 +49,10 @@ ${CMAKE_COMMAND} -GNinja .. \
   -DSECP256K1_USE_ASM=$ASM \
   -DSECP256K1_TEST_OVERRIDE_WIDE_MULTIPLY=$WIDEMUL \
   $ECMULT_GEN_PRECISION_ARG \
-  $CMAKE_EXTRA_FLAGS
+  "${CMAKE_EXTRA_FLAGS[@]}"
+
+# This limits the iterations in the benchmarks below to ITER iterations.
+export SECP256K1_BENCH_ITERS="$ITERS"
 
 ninja $CMAKE_TARGET
 

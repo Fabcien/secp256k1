@@ -8,7 +8,7 @@ set -ex
 # libsepc256k1_jni library referencing the libsecp256k1 library with an absolute
 # path. This needs to be rewritten with install_name_tool to use relative paths
 # via the @variables supported by the macOS loader.
-if [ "$TRAVIS_OS_NAME" = "osx" ] && [ "$JNI" = "yes" ]
+if ["${CIRRUS_OS}" = "darwin"] && [ "$JNI" = "yes" ]
 then
   echo "Skipping the java tests built with autotools on OSX"
   exit 0
@@ -20,11 +20,8 @@ fi
 
 if [ "x$HOST" = "xi686-linux-gnu" ]; then
   CC="$CC -m32"
-fi
-
-if [ "$TRAVIS_OS_NAME" = "osx" ] && [ "$TRAVIS_COMPILER" = "gcc" ]
-then
-  CC="gcc-9"
+elif [ "x$HOST" = "xs390x-linux-gnu" ]; then
+  CC="s390x-linux-gnu-gcc"
 fi
 
 $CC --version
@@ -33,6 +30,12 @@ $CC --version
 
 mkdir buildautotools
 pushd buildautotools
+
+# Nix doesn't store GNU file in /usr/bin, see https://lists.gnu.org/archive/html/bug-libtool/2015-09/msg00000.html .
+# The -i'' is necessary for macOS portability, see https://stackoverflow.com/a/4247319 .
+if [ "${CIRRUS_CI}" = "true" ]; then
+  sed -i'' -e 's@/usr/bin/file@$(which file)@g' ../configure
+fi
 
 ../configure \
   --enable-experimental=$EXPERIMENTAL \
@@ -70,18 +73,30 @@ if [ "$RUN_VALGRIND" = "yes" ]; then
   valgrind --error-exitcode=42 ./exhaustive_tests
 fi
 
+if [ -n "$QEMU_CMD" ]; then
+  $QEMU_CMD ./tests 16
+  $QEMU_CMD ./exhaustive_tests
+fi
+
 if [ "$BENCH" = "yes" ]; then
-  if [ "$RUN_VALGRIND" = "yes" ]; then
-    # Using the local `libtool` because on macOS the system's libtool has
-    # nothing to do with GNU libtool
-    EXEC='./libtool --mode=execute valgrind --error-exitcode=42';
-  else
-    EXEC= ;
+  # Using the local `libtool` because on macOS the system's libtool has
+  # nothing to do with GNU libtool
+  EXEC='./libtool --mode=execute'
+  if [ -n "$QEMU_CMD" ]; then
+    EXEC="$EXEC $QEMU_CMD"
   fi
-  $EXEC ./bench_ecmult >> bench.log 2>&1
-  $EXEC ./bench_internal >> bench.log 2>&1
-  $EXEC ./bench_sign >> bench.log 2>&1
-  $EXEC ./bench_verify >> bench.log 2>&1
+  if [ "$RUN_VALGRIND" = "yes" ]; then
+    EXEC="$EXEC valgrind --error-exitcode=42"
+  fi
+
+  # This limits the iterations in the benchmarks below to ITER iterations.
+  export SECP256K1_BENCH_ITERS="$ITERS"
+  {
+    $EXEC ./bench_ecmult
+    $EXEC ./bench_internal
+    $EXEC ./bench_sign
+    $EXEC ./bench_verify
+  } >> bench.log 2>&1
   if [ "$RECOVERY" == "yes" ]; then
     $EXEC ./bench_recover >> bench.log 2>&1
   fi
