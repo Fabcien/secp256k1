@@ -4553,10 +4553,16 @@ void test_ecdsa_sign_verify(void) {
     secp256k1_ecmult_gen(&ctx->ecmult_gen_ctx, &pubj, &key);
     secp256k1_ge_set_gej(&pub, &pubj);
     getrec = secp256k1_testrand_bits(1);
-    random_sign(&sigr, &sigs, &key, &msg, getrec?&recid:NULL);
+    /* The specific way in which this conditional is written sidesteps a
+     * potential bug in clang. See the commit messages of the commit that
+     * introduced this comment for details. */
     if (getrec) {
+        random_sign(&sigr, &sigs, &key, &msg, &recid);
         CHECK(recid >= 0 && recid < 4);
+    } else {
+        random_sign(&sigr, &sigs, &key, &msg, NULL);
     }
+
     CHECK(secp256k1_ecdsa_sig_verify(&ctx->ecmult_ctx, &sigr, &sigs, &pub, &msg));
     secp256k1_scalar_set_int(&one, 1);
     secp256k1_scalar_add(&msg, &msg, &one);
